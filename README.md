@@ -13,9 +13,9 @@ These are the criteria and goals for viv:
 2. No dependancies (other than Javascript and a modern web browser).
 3. No virtual DOM.
 4. No compiler (or any form of syntax that is not valid Javascript.)
-5. Simple implementation.
-6. Simple to use.
-7. Developer has fine-grained control over which parts of an application update and when.
-8. Good performance.
-9. No magic, leveraging regular Javascript as much as possible.
+5. No magic, leveraging regular Javascript as much as possible.
+6. Simple implementation.
+7. Simple to use.
+8. Developer has fine-grained control over which parts of an application update and when.
+9. Good performance.
 10. Made for developer productivity, reliablity and security.
