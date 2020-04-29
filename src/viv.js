@@ -1,5 +1,5 @@
 // cache children that can be updated
-const vNodeCache = new WeakMap();
+const vivNodeCache = new WeakMap();
 
 
 
@@ -51,7 +51,7 @@ export function generateDOM(json) {
               })(elm, currentNode.text, currentNode);
               updateFunction();
               currentNode.text = updateFunction;
-              elm.Vnode = currentNode;
+              elm.vivNode = currentNode;
             }
             else {
               elm.append(currentNode.text);
@@ -62,7 +62,7 @@ export function generateDOM(json) {
               const updateFunction = (function (parentElm, func, currentThis) {
                 return function (...args) {
                   const newChildren = func.apply(currentThis, args);
-                  const childrenCache = vNodeCache.get(parentElm) || new Map();
+                  const childrenCache = vivNodeCache.get(parentElm) || new Map();
                   const newChildrenCache = new Map();
                   const children = Array.from(parentElm.children);
                   const root = document.createDocumentFragment();
@@ -83,12 +83,12 @@ export function generateDOM(json) {
                     parentElm.removeChild(parentElm.firstElementChild);
                   }
                   parentElm.append(root);
-                  vNodeCache.set(parentElm, newChildrenCache);
+                  vivNodeCache.set(parentElm, newChildrenCache);
                 };
               })(elm, currentNode.children, currentNode);
               updateFunction();
               currentNode.children = updateFunction;
-              elm.Vnode = currentNode;
+              elm.vivNode = currentNode;
             }
             else if (Array.isArray(currentNode.children)) {
               stack.push([elm, currentNode.children]);
