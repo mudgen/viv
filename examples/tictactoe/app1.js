@@ -6,18 +6,17 @@ function square(onclick) {
     tag: "button",
     class: "square",
     text(value = null) { return value; },
-    events: {
-      onclick
-    }
+    onclick
   };
 }
+
+
 
 // Generating an array of square components for the application.
 const uiSquares = [];
 for (let i = 0; i < 9; i++) {
   uiSquares.push(square((e) => squareOnClick(e, i)));
 }
-
 
 // board component. The uiSquares array is used to populate the board.
 const board = [
@@ -61,24 +60,9 @@ let state = {
   xIsNext: true
 };
 
-// Displays the status info
-const status = {
-  tag: "div",
-  text() {
-    const squares = state.history[state.stepNumber].squares;
-    const winner = calculateWinner(squares);
-    if (winner) {
-      return "Winner: " + winner;
-    }
-    else {
-      return "Next player: " + (state.xIsNext ? "X" : "O");
-    }
-  }
-};
-
 // Displays the buttons to show the moves that have been
 // taken.
-const moveButtons = {
+const moves = {
   tag: "ol",
   children() {
     return state.history.map((step, move) => {
@@ -92,13 +76,26 @@ const moveButtons = {
           {
             tag: "button",
             text: desc,
-            events: {
-              onclick: () => jumpTo(move)
-            }
+            onclick: () => jumpTo(move)
           }
         ]
       };
     });
+  }
+};
+
+// Displays the status info
+const status = {
+  tag: "div",
+  text() {
+    const squares = state.history[state.stepNumber].squares;
+    const winner = calculateWinner(squares);
+    if (winner) {
+      return "Winner: " + winner;
+    }
+    else {
+      return "Next player: " + (state.xIsNext ? "X" : "O");
+    }
   }
 };
 
@@ -117,7 +114,7 @@ const app = {
       class: "game-info",
       children: [
         status,
-        moveButtons
+        moves
       ],
     },
   ],
@@ -149,7 +146,7 @@ function squareOnClick(e, i) {
     xIsNext: !state.xIsNext
   };
   status.text();
-  moveButtons.children();
+  moves.children();
 }
 
 
