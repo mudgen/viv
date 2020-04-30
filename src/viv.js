@@ -23,19 +23,13 @@ function vivValue(o, arg, position) {
 function idOrClass(o, arg) {
   let isIdOrClass = false;
   if (typeof arg == "string") {
-    arg = arg.trim().split(" ");
+    arg = arg.trim().split(/[\s\.]+/);
     if (arg[0].startsWith("#")) {
       o.id = arg.shift().slice(1);
       isIdOrClass = true;
     }
-    const clses = [];
-    for (const c of arg) {
-      if (c != "") {
-        clses.push(c);
-      }
-    }
-    if (clses.length > 0) {
-      o.class = clses.join(" ");
+    if (arg.length > 0) {
+      o.class = arg.join(" ");
       isIdOrClass = true;
     }
   }
