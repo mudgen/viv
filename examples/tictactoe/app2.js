@@ -1,6 +1,6 @@
-import { generateDOM, createDOMConstructors } from "../../src/viv.js";
+import { generateDOM, vivElementConstructors } from "../../src/viv.js";
 
-const { button, div, ol, li } = createDOMConstructors("button", "div", "ol", "li");
+const { button, div, ol, li } = vivElementConstructors;
 
 
 // square component
@@ -14,13 +14,12 @@ for (let i = 0; i < 9; i++) {
   uiSquares.push(square((e) => squareOnClick(e, i)));
 }
 
-
 // board component. The uiSquares array is used to populate the board.
 const board =
   [
     div("board-row", uiSquares[0], uiSquares[1], uiSquares[2]),
     div("board-row", uiSquares[3], uiSquares[4], uiSquares[5]),
-    div("board-row", uiSquares[6], uiSquares[7], uiSquares[8])
+    div("board-row", uiSquares[6], uiSquares[7], uiSquares[8]),
   ];
 
 // Application state
@@ -36,31 +35,28 @@ let state = {
 
 // Displays the buttons to show the moves that have been
 // taken.
-const moves =
-  ol(() => {
-    return state.history.map((step, move) => {
-      const desc = move > 0 ?
-        "Go to move #" + move :
-        "Go to game start";
-      return li({ key: move },
-        button({ onclick: () => jumpTo(move) },
-          desc))
-    })
-  });
+const moves = ol(() => {
+  return state.history.map((step, move) => {
+    const desc = move > 0 ?
+      "Go to move #" + move :
+      "Go to game start";
+    return li({ key: move },
+      button({ onclick: () => jumpTo(move) }, desc))
+  })
+});
 
 
 // Displays the status info
-const status =
-  div(() => {
-    const squares = state.history[state.stepNumber].squares;
-    const winner = calculateWinner(squares);
-    if (winner) {
-      return "Winner: " + winner;
-    }
-    else {
-      return "Next player: " + (state.xIsNext ? "X" : "O");
-    }
-  });
+const status = div(() => {
+  const squares = state.history[state.stepNumber].squares;
+  const winner = calculateWinner(squares);
+  if (winner) {
+    return "Winner: " + winner;
+  }
+  else {
+    return "Next player: " + (state.xIsNext ? "X" : "O");
+  }
+});
 
 // Structure of the application.
 const app =
@@ -72,11 +68,10 @@ const app =
 // Adding our application to the browser.
 document.getElementById("root").replaceWith(generateDOM(app));
 
-
 // This is the event handler that is added to square components
 // This handler runs when somone clicks on a square component.
 function squareOnClick(e, i) {
-  const uiSquare = e.target.vivNode;
+  const uiSquare = e.target.vivElement;
   const history = state.history.slice(0, state.stepNumber + 1);
   const current = history[history.length - 1];
   const squares = current.squares.slice();
@@ -84,6 +79,7 @@ function squareOnClick(e, i) {
     return;
   }
   squares[i] = state.xIsNext ? "X" : "O";
+
   uiSquare.update(squares[i]);
   state = {
     history: history.concat([

@@ -1,0 +1,25 @@
+{
+  "name": "viv",
+  "version": "1.0.0",
+  "description": "Library for creating web applications in the browser.",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mudgen/viv.git"
+  },
+  "author": "Nick Mudge",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mudgen/viv/issues"
+  },
+  "homepage": "https://github.com/mudgen/viv#readme",
+  "devDependencies": {
+    "eslint": "^6.8.0"
+  }
+}

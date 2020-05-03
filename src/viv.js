@@ -1,18 +1,28 @@
+// @ts-check
+
+function isObject(arg) {
+  return Object.prototype.toString.call(arg) == "[object Object]";
+}
+
+function isVivElement(arg) {
+  return isObject(arg) && arg.vivTag;
+}
+
+function exists(o, prop) {
+  return prop in o || typeof o[prop] != "undefined";
+}
 
 
-function vivValue(o, arg, position) {
-  if (["string", "function"].includes(typeof arg)) {
-    o.children.push(arg);
-    return true;
-  }
-  else if (Array.isArray(arg)) {
-    throw Error(`Argument number ${position} can't be an array.`);
-  }
-  else if (typeof arg == "object") {
-    if (arg.tag) {
-      o.children.push(arg);
-      return true;
+function idOrClass(o, arg) {
+  if (typeof arg === "string") {
+    arg = arg.trim().split(/[\s.]+/);
+    if (arg[0].startsWith("#")) {
+      o.attrs.id = arg.shift().slice(1);
     }
+    if (arg.length > 0) {
+      o.attrs.class = arg.join(" ");
+    }
+    return true;
   }
   else if (arg === null) {
     return true;
@@ -20,96 +30,76 @@ function vivValue(o, arg, position) {
   return false;
 }
 
-function idOrClass(o, arg) {
-  let isIdOrClass = false;
-  if (typeof arg == "string") {
-    arg = arg.trim().split(/[\s\.]+/);
-    if (arg[0].startsWith("#")) {
-      o.id = arg.shift().slice(1);
-      isIdOrClass = true;
-    }
-    if (arg.length > 0) {
-      o.class = arg.join(" ");
-      isIdOrClass = true;
-    }
-  }
-  return isIdOrClass;
-}
-
-function attrsOrVivValue(o, arg, position) {
-  let isAttrsOrVivValue = false;
-  if (vivValue(o, arg, position)) {
-    isAttrsOrVivValue = true;
-  }
-  else if (typeof arg == "object") {
-    Object.assign(o, arg)
-    isAttrsOrVivValue = true;
-  }
-  return isAttrsOrVivValue;
-}
-
-function el(tag) {
-  return (...args) => {
-    const o = Object.create(null);
-    o.tag = tag;
-    o.children = [];
-    if (args.length === 0) {
-      return o;
-    }
-    else if (args.length === 1) {
-      if (!attrsOrVivValue(o, args[0], 0)) {
-        throw Error("First argument is invalid.");
-      }
-      return o;
-    }
-    else if (args.length === 2) {
-      if (idOrClass(o, args[0])) {
-        if (!attrsOrVivValue(o, args[1], 1)) {
-          throw Error("First argument is invalid.");
-        }
-      }
-      else {
-        if (!attrsOrVivValue(o, args[0], 0)) {
-          throw Error("First argument is invalid.");
-        }
-        if (!vivValue(o, args[1], 1)) {
-          throw Error("Second argument is invalid.");
-        }
-      }
-      return o;
-    }
-
-    let offset = 0;
-    if (idOrClass(o, args[0])) {
-      if (!attrsOrVivValue(o, args[1], 1)) {
-        throw Error("Second argument is invalid.");
-      }
-      offset = 2;
-      args.splice(0, 2);
-    }
-    else {
-      if (!attrsOrVivValue(o, args[0], 0)) {
-        throw Error("First argument is invalid.");
-      }
-      args.shift();
-      offset = 1;
-    }
-    for (const [index, arg] of args.entries()) {
-      if (!vivValue(o, arg, index + offset)) {
-        throw Error(`Argument ${index + offset} is invalid.`);
-      }
-    }
+function vivElementConstructor(tag, ...args) {
+  const o = Object.create(null);
+  o.vivTag = tag;
+  o.attrs = {};
+  o.children = [];
+  if (args.length === 0) {
     return o;
   }
+  if (idOrClass(o, args[0])) {
+    args.shift();
+  }
+  for (const arg of args) {
+    if (isObject(arg)) {
+      if (arg.vivTag) {
+        o.children.push(arg);
+      }
+      else {
+        Object.assign(o.attrs, arg)
+      }
+    }
+    else if (Array.isArray(arg)) {
+      o.children.push.apply(o.children, arg);
+    }
+    else if (arg === null) {
+      continue;
+    }
+    else {
+      o.children.push(arg);
+    }
+  }
+  return o;
 }
 
-export function createDOMConstructors(...args) {
-  return args.reduce((acc, value) => {
-    acc[value] = el(value)
-    return acc;
-  }, {})
+/**
+ * Creates specific vivElement constructors.
+ * @param {string} tag 
+ */
+function vivElementConstructorFactory(tag) {
+  return new Proxy(vivElementConstructor, {
+    apply(target, thisArg, args) {
+      return target.apply(null, [tag, ...args]);
+    },
+    get(target, property) {
+      if (exists(target, property)) {
+        return target[property];
+      }
+      else if (property === "text") {
+        target[property] = (...args) => vivElementConstructor(tag, null, args)
+        return target[property];
+      }
+    }
+  })
 }
 
+export const vivElementConstructors = new Proxy(Object.create(null), {
+  get: function (target, prop, receiver) {
+    if (exists(target, prop)) {
+      return target[prop];
+    }
+    if (typeof prop !== "string") {
+      throw Error("Must be strings.")
+    }
+    target[prop] = vivElementConstructorFactory(prop);
+    return target[prop];
+  }
+});
+
+console.log("tesing here");
+console.log(vivElementConstructors.something);
+console.log("tesing here1");
 
 // cache function info
 const vivUpdateCache = new WeakMap();
@@ -144,12 +134,12 @@ function addUpdateFunction(parentElm, func, currentThis) {
       const children = Array.from(parentElm.children);
       const root = document.createDocumentFragment();
       for (const [index, child] of result.entries()) {
-        newChildrenCache.set(child.key, {
-          tag: child.tag,
+        newChildrenCache.set(child.attrs.key, {
+          vivTag: child.vivTag,
           position: index
         });
-        const childCache = childrenCache.get(child.key);
-        if (childCache && childCache.tag === child.tag) {
+        const childCache = childrenCache.get(child.attrs.key);
+        if (childCache && childCache.vivTag === child.vivTag) {
           root.append(children[childCache.position]);
         }
         else {
@@ -162,10 +152,10 @@ function addUpdateFunction(parentElm, func, currentThis) {
       parentElm.append(root);
       vivUpdateCache.set(update, newChildrenCache);
     }
-    else if (typeof result == "object" && result.tag) {
+    else if (isVivElement(result)) {
       const cachedNodeInfo = vivUpdateCache.get(update);
       if (!cachedNodeInfo) {
-        cachedNode = generateDOM(result);
+        const cachedNode = generateDOM(result);
         vivUpdateCache.set(update, [parentElm.childNodes.length, cachedNode]);
         parentElm.append(cachedNode);
       }
@@ -179,63 +169,58 @@ function addUpdateFunction(parentElm, func, currentThis) {
   }
 }
 
-// Convert json to DOM and return a DocumentFragment of it.
-export function generateDOM(rootVivValue) {
+/**
+ * Convert json to DOM and return a DocumentFragment of it.
+ * @param {Object|Object[]} rootVivElement 
+ */
+export function generateDOM(rootVivElement) {
   const fragment = document.createDocumentFragment();
-  fragment.vivNode = null;
-  const stack = Array.isArray(rootVivValue) ?
-    [[fragment, rootVivValue]] :
-    [[fragment, [rootVivValue]]];
-
+  if (!Array.isArray(rootVivElement)) {
+    rootVivElement = [rootVivElement];
+  }
+  /** @type {[[DocumentFragment|Element & {vivElement: Object}, [Object]]]}  */
+  const stack = [[fragment, rootVivElement]];
   while (stack.length > 0) {
     const [parentElm, vivValues] = stack.pop();
     for (const [index, vivValue] of vivValues.entries()) {
       if (typeof vivValue == "function") {
-        const update = addUpdateFunction(parentElm, vivValue, parentElm.vivNode)
+        const update = addUpdateFunction(parentElm, vivValue, parentElm.vivElement)
         update();
         vivValues[index] = update;
         continue;
       }
-      if (typeof vivValue == "string") {
+      else if (typeof vivValue == "string") {
         parentElm.append(document.createTextNode(vivValue));
         continue;
       }
-      if (typeof vivValue != "object" || !vivValue.tag) {
-        throw Error("Not a valid vivValue.");
+      else if (!isVivElement(vivValue)) {
+        parentElm.append(document.createTextNode(String(vivValue)));
+        continue;
       }
-      const elm = document.createElement(vivValue.tag);
-      elm.vivNode = vivValue;
-      for (const key in vivValue) {
-        if (typeof vivValue[key] == "object") {
-          vivValue[key]["parent"] = vivValue;
-        }
+      const elm = document.createElement(vivValue.vivTag);
+      if (vivValue.children.length > 0) {
+        stack.push([elm, vivValue.children])
+      }
+      for (const key in vivValue.attrs) {
         if (key.startsWith("on")) {
-          elm[key] = vivValue[key];
+          elm[key] = vivValue.attrs[key];
           continue;
         }
-
         switch (key) {
-          case "tag":
-            break;
           case "class":
-            if (typeof vivValue.class == "string") {
-              elm.setAttribute("class", vivValue.class);
+            if (typeof vivValue.attrs.class == "string") {
+              elm.setAttribute("class", vivValue.attrs.class);
             }
-            else if (typeof vivValue.class == "object") {
-              const elmClasses = Object.keys(vivValue.class)
-                .filter((className) => vivValue.class[className]);
+            else if (isObject(vivValue.attrs.class)) {
+              const elmClasses = Object.keys(vivValue.attrs.class)
+                .filter((className) => vivValue.attrs.class[className]);
               elm.setAttribute("class", elmClasses.join(" "));
             }
             break;
-          case "children":
-            if (Array.isArray(vivValue.children)
-              && vivValue.children.length > 0) {
-              stack.push([elm, vivValue.children]);
-            }
-            break;
-
+          case "key":
+            continue;
           default:
-            elm.setAttribute(key, vivValue[key]);
+            elm.setAttribute(key, vivValue.attrs[key]);
           /*
             case "style":
             const styles = Object.entries(currentNode.style)
@@ -247,29 +232,42 @@ export function generateDOM(rootVivValue) {
             break;
             */
         }
-        parentElm.append(elm);
       }
+      elm.vivElement = vivValue;
+      parentElm.append(elm);
+
       vivValue.update = (...args) => {
-        let func = null;
         for (const child of vivValue.children) {
           if (typeof child == "function") {
-            func = child;
+            child.apply(vivValue, args);
             break;
           }
-        }
-        if (func) {
-          func.apply(vivValue, args);
         }
       }
       vivValue.updates = (...args) => {
         for (const [index, child] of vivValue.children.entries()) {
           if (typeof child == "function") {
             if (args.length == 0) {
-              func.apply(vivValue);
+              child.apply(vivValue);
             }
             else {
-              func.apply(vivValue, args[index]);
+              child.apply(vivValue, args[index]);
             }
+          }
+        }
+      }
+      vivValue.updateAll = (...args) => {
+        for (const [index, child] of vivValue.children.entries()) {
+          if (typeof child == "function") {
+            if (args.length == 0) {
+              child.apply(vivValue);
+            }
+            else {
+              child.apply(vivValue, args[index]);
+            }
+          }
+          else if (isVivElement(child)) {
+            child.updateAll.apply(child, args);
           }
         }
       }
