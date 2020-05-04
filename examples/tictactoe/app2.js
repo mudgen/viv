@@ -1,7 +1,6 @@
-import { generateDOM, vivElementConstructors } from "../../src/viv.js";
+import { elementConstructors } from "../../src/viv.js";
 
-const { button, div, ol, li } = vivElementConstructors;
-
+const { button, div, ol, li } = elementConstructors;
 
 // square component
 function square(onclick) {
@@ -66,12 +65,12 @@ const app =
   );
 
 // Adding our application to the browser.
-document.getElementById("root").replaceWith(generateDOM(app));
+document.getElementById("root").replaceWith(app);
 
 // This is the event handler that is added to square components
 // This handler runs when somone clicks on a square component.
 function squareOnClick(e, i) {
-  const uiSquare = e.target.vivElement;
+  const uiSquare = e.target;
   const history = state.history.slice(0, state.stepNumber + 1);
   const current = history[history.length - 1];
   const squares = current.squares.slice();
@@ -80,7 +79,7 @@ function squareOnClick(e, i) {
   }
   squares[i] = state.xIsNext ? "X" : "O";
 
-  uiSquare.update(squares[i]);
+  uiSquare.viv.updates[0](squares[i]);
   state = {
     history: history.concat([
       {
@@ -90,8 +89,8 @@ function squareOnClick(e, i) {
     stepNumber: history.length,
     xIsNext: !state.xIsNext
   };
-  status.update();
-  moves.update();
+  status.viv.updates[0]();
+  moves.viv.updates[0]();
 }
 
 
@@ -100,10 +99,10 @@ function squareOnClick(e, i) {
 function jumpTo(step) {
   state.stepNumber = step;
   state.xIsNext = (step % 2) === 0;
-  status.update();
+  status.viv.updates[0]();
   const historySquares = state.history[step].squares;
   for (let i = 0; i < historySquares.length; i++) {
-    uiSquares[i].update(historySquares[i]);
+    uiSquares[i].viv.updates[0](historySquares[i]);
   }
 }
 
