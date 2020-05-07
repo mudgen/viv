@@ -8,34 +8,14 @@ function exists(o, prop) {
   return prop in o || typeof o[prop] != "undefined";
 }
 
+
 // cache function info
 const vivUpdateCache = new WeakMap();
 // implment handling null values;
 function addUpdateFunction(element, func) {
   return function update(...args) {
-    const result = func.apply(element, args);
-    if (typeof result == "string") {
-      const cachedNodeInfo = vivUpdateCache.get(update);
-      if (!cachedNodeInfo) {
-        const cachedNode = document.createTextNode(result);
-        vivUpdateCache.set(update, [element.childNodes.length, cachedNode]);
-        element.append(cachedNode);
-      }
-      else {
-        //if(cachedNode.nodeType != Node.TEXT_NODE)
-        let [position, cachedNode] = cachedNodeInfo;
-        if (cachedNode.nodeType != Node.TEXT_NODE) {
-          const cachedNode = document.createTextNode(result);
-          vivUpdateCache.set(update, [position, cachedNode]);
-          element.replaceChild(cachedNode, element.childNodes[position]);
-        }
-        else if (result !== cachedNode.textContent) {
-          cachedNode.textContent = result;
-        }
-      }
-      return;
-    }
-    else if (Array.isArray(result)) {
+    let result = func.apply(element, args);
+    if (Array.isArray(result)) {
       const childrenCache = vivUpdateCache.get(update) || new Map();
       const newChildrenCache = new Map();
       const children = Array.from(element.children);
@@ -70,18 +50,17 @@ function addUpdateFunction(element, func) {
       element.append(root);
       vivUpdateCache.set(update, newChildrenCache);
     }
-    else if (result instanceof Element) {
-      const cachedNodeInfo = vivUpdateCache.get(update);
-      if (!cachedNodeInfo) {
-        const cachedNode = result;
-        vivUpdateCache.set(update, [element.childNodes.length, cachedNode]);
-        element.append(cachedNode);
+    else {
+      if (typeof result === "string") {
+        result = document.createTextNode(result);
+      }
+      const cachedNode = vivUpdateCache.get(update);
+      vivUpdateCache.set(update, result);
+      if (!cachedNode) {
+        element.append(result);
       }
       else {
-        let [position, cachedNode] = cachedNodeInfo;
-        cachedNode = result;
-        vivUpdateCache.set(update, [position, cachedNode]);
-        element.replaceChild(cachedNode, element.childNodes[position]);
+        element.replaceChild(result, cachedNode);
       }
     }
   }
@@ -104,28 +83,16 @@ function idOrClass(element, arg) {
   return false;
 }
 
-function assignAttributes(element, attrs) {
-  for (const key in attrs) {
-    if (key.startsWith("on")) {
-      element[key] = attrs[key];
-      continue;
+function assignProperties(element, props) {
+  for (const key in props) {
+    if (key === "key") {
+      element.viv.key = key;
     }
-    switch (key) {
-      case "class":
-        if (typeof attrs.class == "string") {
-          element.setAttribute("class", attrs.class);
-        }
-        else if (isObject(attrs.class)) {
-          const elmClasses = Object.keys(attrs.class)
-            .filter((className) => attrs.class[className]);
-          element.setAttribute("class", elmClasses.join(" "));
-        }
-        break;
-      case "key":
-        element.viv.key = attrs[key];
-        continue;
-      default:
-        element.setAttribute(key, attrs[key]);
+    else if (typeof props[key] === "string") {
+      element.setAttribute(key, props[key])
+    }
+    else {
+      element[key] = props[key];
     }
   }
 }
@@ -142,12 +109,19 @@ function addChild(element, child) {
     element.append(child);
   }
   else if (isObject(child)) {
-    assignAttributes(element, child)
+    assignProperties(element, child)
   }
   else if (typeof child == "function") {
     const update = addUpdateFunction(element, child)
     update();
-    element.viv.updates.push(update);
+    if (child.name) {
+      element.viv.childFunctions[child.name] = update
+    }
+    else {
+      const length = Object.keys(element.viv.childFunctions)
+        .filter((value) => typeof value === "number").length;
+      element.viv.childFunctions[length] = update
+    }
   }
   else if (typeof child == "string") {
     element.append(document.createTextNode(child));
@@ -160,11 +134,13 @@ function addChild(element, child) {
   }
 }
 
+
+
 function constructElement(tag, ...args) {
   const element = document.createElement(tag);
   const vivObject = Object.create(null);
   element.viv = vivObject;
-  vivObject.updates = [];
+  vivObject.childFunctions = {};
   if (args.length === 0) {
     return element;
   }

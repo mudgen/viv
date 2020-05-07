@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Convert HTML to Javascript DOM Notation</title>
+  <meta name="description" content="Convert HTML to Javascript DOM Notation">
+  <meta name="author" content="Nick Mudge">
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+  <link rel="stylesheet" href="libs/codemirror.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tailwindcss/ui@latest/dist/tailwind-ui.min.css">
+  <style>
+    #header {
+      background: rgb(229,237,255);
+background: linear-gradient(0deg, rgba(229,237,255,1) 30%, rgba(194,204,227,1) 100%);
+
+    }
+  </style>
+
+</head>
+<!--
+  background: rgb(61,56,135);
+background: linear-gradient(0deg, rgba(61,56,135,1) 0%, rgba(229,237,255,1) 100%, rgba(0,212,255,1) 100%);
+bg-indigo-100
+-->
+
+
+<body class="bg-indigo-100">
+  <div id="root">
+
+  </div>
+  <script src="libs/codemirror.js"></script>
+  <script src="libs/mode/xml/xml.js"></script>
+  <script src="libs/mode/javascript/javascript.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+
+</html>

@@ -46,7 +46,7 @@ const moves = ol(() => {
 
 
 // Displays the status info
-const status = div(() => {
+const status = div(function update() {
   const squares = state.history[state.stepNumber].squares;
   const winner = calculateWinner(squares);
   if (winner) {
@@ -79,7 +79,7 @@ function squareOnClick(e, i) {
   }
   squares[i] = state.xIsNext ? "X" : "O";
 
-  uiSquare.viv.updates[0](squares[i]);
+  uiSquare.viv.functions[0](squares[i]);
   state = {
     history: history.concat([
       {
@@ -89,8 +89,9 @@ function squareOnClick(e, i) {
     stepNumber: history.length,
     xIsNext: !state.xIsNext
   };
-  status.viv.updates[0]();
-  moves.viv.updates[0]();
+  //status.viv.functions[0]();
+  status.viv.functions.update();
+  moves.viv.functions[0]();
 }
 
 
@@ -99,10 +100,10 @@ function squareOnClick(e, i) {
 function jumpTo(step) {
   state.stepNumber = step;
   state.xIsNext = (step % 2) === 0;
-  status.viv.updates[0]();
+  status.viv.functions.update();
   const historySquares = state.history[step].squares;
   for (let i = 0; i < historySquares.length; i++) {
-    uiSquares[i].viv.updates[0](historySquares[i]);
+    uiSquares[i].viv.functions[0](historySquares[i]);
   }
 }
 
