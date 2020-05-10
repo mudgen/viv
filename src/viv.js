@@ -66,33 +66,36 @@ function addUpdateFunction(element, func) {
   }
 }
 
-function idOrClass(element, arg) {
-  if (typeof arg === "string") {
-    arg = arg.trim().split(/[\s.]+/);
-    if (arg[0].startsWith("#")) {
-      element.setAttribute("id", arg.shift().slice(1))
-    }
-    if (arg.length > 0) {
-      element.setAttribute("class", arg.join(" "))
-    }
-    return true;
-  }
-  else if (arg === null) {
-    return true;
-  }
-  return false;
-}
 
+/**
+ * @param {Element} element
+ * @param {{ [x: string]: any; }} props
+ */
 function assignProperties(element, props) {
   for (const key in props) {
+    let value = props[key];
     if (key === "key") {
-      element.viv.key = key;
+      element.viv.key = value;
     }
-    else if (typeof props[key] === "string") {
-      element.setAttribute(key, props[key])
+    else if (typeof value === "string") {
+      if (key === "class") {
+        value = value.trim().split(/[\s.]+/);
+        if (value.length == 0) {
+          continue;
+        }
+        if (value[0].startsWith("#")) {
+          element.setAttribute("id", value.shift().slice(1))
+        }
+        if (value.length > 0) {
+          element.setAttribute("class", value.join(" "))
+        }
+      }
+      else {
+        element.setAttribute(key, value)
+      }
     }
     else {
-      element[key] = props[key];
+      element[key] = value;
     }
   }
 }
@@ -136,17 +139,15 @@ function addChild(element, child) {
 
 
 
-function constructElement(tag, ...args) {
-  const element = document.createElement(tag);
+/**
+ * @param {string} tagName
+ * @param {any[]} args
+ */
+function constructElement(tagName, ...args) {
+  const element = document.createElement(tagName);
   const vivObject = Object.create(null);
   element.viv = vivObject;
   vivObject.childFunctions = {};
-  if (args.length === 0) {
-    return element;
-  }
-  if (idOrClass(element, args[0])) {
-    args.shift();
-  }
   for (const arg of args) {
     addChild(element, arg)
   }
@@ -155,24 +156,51 @@ function constructElement(tag, ...args) {
 
 /**
  * Creates specific vivElement constructors.
- * @param {string} tag 
+ * @param {string} tag
+ * @param {string[]} propNames
  */
-function elementConstructor(tag) {
+function elementConstructor(tag, propNames) {
   return new Proxy(constructElement, {
     apply(target, thisArg, args) {
-      return target.apply(null, [tag, ...args]);
+      const props = Object.create(null);
+      for (const [index, arg] of args.slice().entries()) {
+        if (index === propNames.length) {
+          break;
+        }
+        if (typeof arg !== "string") {
+          break;
+        }
+        props[propNames[index]] = arg;
+        args.shift();
+      }
+      return target.apply(null, [tag, props, ...args]);
     },
     get(target, property) {
       if (exists(target, property)) {
         return target[property];
       }
+      else if (typeof property != "string") {
+        throw Error("Property must be a string.");
+      }
       else if (property === "text") {
-        target[property] = (...args) => constructElement(tag, null, ...args)
+        let propNamesCopy = propNames.slice();
+        let index = propNamesCopy.indexOf("class");
+        if (index > -1) {
+          propNamesCopy.splice(index, 1)
+        }
+        target[property] = elementConstructor(tag, propNamesCopy);
+        return target[property];
+      }
+      else {
+        let propNamesCopy = propNames.slice();
+        propNamesCopy.push(property);
+        target[property] = elementConstructor(tag, propNamesCopy);
         return target[property];
       }
     }
   })
 }
+
 
 export const elementConstructors = new Proxy(Object.create(null), {
   get: function (target, prop) {
@@ -182,7 +210,14 @@ export const elementConstructors = new Proxy(Object.create(null), {
     if (typeof prop !== "string") {
       throw Error("Must be strings.")
     }
-    target[prop] = elementConstructor(prop);
+    if (prop.endsWith("t")) {
+      const tElements = ["datalist", "dt", "fieldset", "input", "noscript", "object", "rt", "script", "select", "tfoot"];
+      if (!tElements.includes(prop)) {
+        target[prop] = elementConstructor(prop.slice(0, -1), []);
+        return target[prop];
+      }
+    }
+    target[prop] = elementConstructor(prop, ["class"]);
     return target[prop];
   }
 });

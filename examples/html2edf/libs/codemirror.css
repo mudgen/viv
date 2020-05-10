@@ -128,9 +128,6 @@
 .cm-s-default .cm-number {color: #164;}
 .cm-s-default .cm-def {color: #00f;}
 
-.cm-variable {
-  color: #00c;
-}
 
 
 /*
@@ -139,11 +136,18 @@
 .cm-s-default .cm-property,
 .cm-s-default .cm-operator {}
 */
+.cm-variable {
+  /* rgb(0,0,204) */
+  color: rgb(0,0,194);
+}
+
+
 .cm-s-default .cm-variable-2 {color: #05a;}
 .cm-s-default .cm-variable-3, .cm-s-default .cm-type {color: #085;}
-.cm-s-default .cm-comment {color: #a50;}
-.cm-s-default .cm-string {color: #a11;}
-.cm-s-default .cm-string-2 {color: #f50;}
+.cm-s-default .cm-comment {color: #a50 /*#a50;*/}
+
+/* rgb(102, 115, 241) */
+.cm-s-default .cm-string-2 {color: rgb(170,64,64) /*rgb(80, 90, 220)*/ /*#a22*/ /* #047481*/ /*#a11*/ /*#f50*/;}
 .cm-s-default .cm-meta {color: #555;}
 .cm-s-default .cm-qualifier {color: #555;}
 .cm-s-default .cm-builtin {color: #30a;}
@@ -153,14 +157,31 @@
 .cm-s-default .cm-hr {color: #999;}
 .cm-s-default .cm-link {color: #00c;}
 
+.cm-s-default .cm-string {color: rgb(54, 67, 120)/*black*/;/*#a11*/}
 
-.cm-s-default .cm-variable + .cm-string {color: #047481/*#05505C*//*#403698*//*#233876*/ /*#555*/;}
+/* rgb(170,34,34) */
 
+.cm-s-default .cm-attribute + .cm-string {color: rgb(170,74,74);}
+
+/* rgb(102, 115, 241) */
+
+.cm-s-default .cm-property + .cm-string {color: rgb(80, 90, 200) /*#a22*/;}
+
+/* rgb(80, 90, 220) */
+.cm-s-default .cm-property + .cm-string-2 + .cm-string {color: rgb(75, 85, 170);}
 
 .cm-s-default .cm-property {
-  color: #170 !important;
+  color: #170/*rgba(120, 55, 20, 1)*/;
 }
 
+
+/*
+<pre class=" CodeMirror-line " role="presentation">
+<span role="presentation" style="padding-right: 0.1px;">
+  <span class="cm-string">"#"</span>,
+  <span class="cm-string">" Get started "</span>)),
+</span></pre>
+*/
 .cm-s-default .cm-error {color: #f00;}
 .cm-invalidchar {color: #f00;}
 
