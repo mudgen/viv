@@ -144,7 +144,7 @@
 
 .cm-s-default .cm-variable-2 {color: #05a;}
 .cm-s-default .cm-variable-3, .cm-s-default .cm-type {color: #085;}
-.cm-s-default .cm-comment {color: #a50 /*#a50;*/}
+.cm-s-default .cm-comment {color: rgb(150,105,50) /*#a50;*/}
 
 /* rgb(102, 115, 241) */
 .cm-s-default .cm-string-2 {color: rgb(170,64,64) /*rgb(80, 90, 220)*/ /*#a22*/ /* #047481*/ /*#a11*/ /*#f50*/;}

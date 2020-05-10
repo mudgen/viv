@@ -160,18 +160,29 @@ function constructElement(tagName, ...args) {
  * @param {string[]} propNames
  */
 function elementConstructor(tag, propNames) {
-  return new Proxy(constructElement, {
+  let classes = "";
+  let construct = new Proxy(constructElement, {
     apply(target, thisArg, args) {
+      if (args.length > 0 && Array.isArray(args[0])) {
+        classes = args[0][0];
+        return construct;
+      }
       const props = Object.create(null);
-      for (const [index, arg] of args.slice().entries()) {
-        if (index === propNames.length) {
-          break;
+      if (classes.length > 0) {
+        props["class"] = classes;
+        classes = "";
+      }
+      if (propNames.length > 0) {
+        for (const [index, arg] of args.slice().entries()) {
+          if (index === propNames.length) {
+            break;
+          }
+          if (typeof arg !== "string") {
+            break;
+          }
+          props[propNames[index]] = arg;
+          args.shift();
         }
-        if (typeof arg !== "string") {
-          break;
-        }
-        props[propNames[index]] = arg;
-        args.shift();
       }
       return target.apply(null, [tag, props, ...args]);
     },
@@ -182,23 +193,13 @@ function elementConstructor(tag, propNames) {
       else if (typeof property != "string") {
         throw Error("Property must be a string.");
       }
-      else if (property === "text") {
-        let propNamesCopy = propNames.slice();
-        let index = propNamesCopy.indexOf("class");
-        if (index > -1) {
-          propNamesCopy.splice(index, 1)
-        }
-        target[property] = elementConstructor(tag, propNamesCopy);
-        return target[property];
-      }
-      else {
-        let propNamesCopy = propNames.slice();
-        propNamesCopy.push(property);
-        target[property] = elementConstructor(tag, propNamesCopy);
-        return target[property];
-      }
+      let propNamesCopy = propNames.slice();
+      propNamesCopy.push(property);
+      target[property] = elementConstructor(tag, propNamesCopy);
+      return target[property];
     }
   })
+  return construct;
 }
 
 
@@ -209,13 +210,6 @@ export const elementConstructors = new Proxy(Object.create(null), {
     }
     if (typeof prop !== "string") {
       throw Error("Must be strings.")
-    }
-    if (prop.endsWith("t")) {
-      const tElements = ["datalist", "dt", "fieldset", "input", "noscript", "object", "rt", "script", "select", "tfoot"];
-      if (!tElements.includes(prop)) {
-        target[prop] = elementConstructor(prop.slice(0, -1), []);
-        return target[prop];
-      }
     }
     target[prop] = elementConstructor(prop, ["class"]);
     return target[prop];
