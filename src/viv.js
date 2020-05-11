@@ -144,7 +144,7 @@ function addChild(element, child) {
  * @param {any[]} args
  */
 function constructElement(tagName, ...args) {
-  const element = document.createElement(tagName);
+  const element = document.createElement(tagName.toLowerCase());
   const vivObject = Object.create(null);
   element.viv = vivObject;
   vivObject.childFunctions = {};
@@ -153,6 +153,60 @@ function constructElement(tagName, ...args) {
   }
   return element;
 }
+
+/*
+For attribute replace hyphins with camel case.  my-option becomes myOption.
+Make HTML, HEAD and BODY functions automatically replace the existing ones in the document (brilliant!)
+Special style tag.
+
+img("something").src("something").alt("mytext")
+
+img`something`.src('interestinglinkurl').alt`how do you know?`("my text");
+
+img.src`interestinglinkurl`.alt`how do you know?`("my text");
+
+<img src="interestinglinkurl" alt="howdoyou now?"> something </img>
+
+*/
+
+
+
+
+/*
+
+  li(a.href`grey-text text-lighten-3`("#!", "Link 1")),
+  li(a.href`grey-text text-lighten-3`("#!", "Link 2")),
+  li(a.href`grey-text text-lighten-3`("#!", "Link 3")),
+  li(a.href`grey-text text-lighten-3`("#!", "Link 4")))))),
+
+  li(a`grey-text text-lighten-3`.href`#!`("Link 1")),
+  li(a`grey-text text-lighten-3`.href`#!`("Link 2")),
+  li(a`grey-text text-lighten-3`.href`#!`("Link 3")),
+  li(a`grey-text text-lighten-3`.href`#!`("Link 4"))))))
+   
+  li(a`grey-text text-lighten-3`({href:"#1"}, "Link 1")),
+  li(a`grey-text text-lighten-3`({href:"#1"}, "Link 2")),
+  li(a`grey-text text-lighten-3`({href:"#1"}, "Link 3")),
+  li(a`grey-text text-lighten-3`({href:"#1"}, "Link 4"))))))
+     
+  <li><a class="grey-text text-lighten-3" href="#!">Link 1</a></li>
+  <li><a class="grey-text text-lighten-3" href="#!">Link 2</a></li>
+  <li><a class="grey-text text-lighten-3" href="#!">Link 3</a></li>
+  <li><a class="grey-text text-lighten-3" href="#!">Link 4</a></li>
+
+
+  <li><a class="grey-text text-lighten-3" href="#!">Link 1</a></li>
+  <li><a class="grey-text text-lighten-3" href="#!">Link 2</a></li>
+  <li><a class="grey-text text-lighten-3" href="#!">Link 3</a></li>
+  <li><a class="grey-text text-lighten-3" href="#!">Link 4</a></li>
+
+
+   li(a`grey-text text-lighten-3`.href`#!`("Link 1")),
+   li(a`grey-text text-lighten-3`.href`#!`("Link 2")),
+   li(a`grey-text text-lighten-3`.href`#!`("Link 3")),
+   li(a`grey-text text-lighten-3`.href`#!`("Link 4"))))))
+  */
+
 
 /**
  * Creates specific vivElement constructors.

@@ -5,9 +5,6 @@ import { examples } from "./examples.js";
 
 const { div, h1, h1t, h2, span, button, textarea, pre, code } = elementConstructors;
 
-
-
-
 const CodeMirror = window.CodeMirror;
 
 //console.log(h1t("cool!"))
@@ -30,47 +27,6 @@ function showExample(e) {
     exampleIndex = 0;
   }
 }
-/*
-const t =
-  div.class("flex flex-col h-screen",
-    h1.class("#header p-5 text-2xl text-indigo-900 font-medium", 'Convert HTML to Enhanced DOM Functions (EDF)'),
-    div.class("flex-1 bg-indigo-200 text-center px-2 pb-2 m-2 grid gap-2 grid-cols-2 text-white rounded-md",
-      div.class("flex flex-col",
-        div.class("flex items-center",
-          div.class("flex flex-1 justify-start",
-            button.class("px-1 border border-transparent text-sm font-medium rounded text-gray-50 bg-indigo-400 hover:bg-indigo-300 focus:outline-none focus:border-indigo-400 focus:shadow-outline-indigo active:bg-indigo-500 transition ease-in-out duration-150",
-              { "type": 'button', onclick: showExample },
-              'Insert Example')),
-          h2.class("mb-1 text-xl text-indigo-900 font-medium", 'Type or paste HTML'),
-          div.class("flex-1")),
-        editorCode =
-        div.class("h-full rounded-md shadow-inner text-left")),
-      div.class("flex flex-col",
-        h2.class("mb-1 text-xl text-indigo-900 font-medium", 'Copy Enhanced DOM Functions (EDF)'),
-        displayCode =
-        div.class("h-full rounded-md shadow-inner text-left")),
-
-
-        const t =
-        div.c("flex flex-col h-screen",
-          h1.c("#header p-5 text-2xl text-indigo-900 font-medium", 'Convert HTML to Enhanced DOM Functions (EDF)'),
-          div.c("flex-1 bg-indigo-200 text-center px-2 pb-2 m-2 grid gap-2 grid-cols-2 text-white rounded-md",
-            div.c("flex flex-col",
-              div.c("flex items-center",
-                div.c("flex flex-1 justify-start",
-                  button.class("px-1 border border-transparent text-sm font-medium rounded text-gray-50 bg-indigo-400 hover:bg-indigo-300 focus:outline-none focus:border-indigo-400 focus:shadow-outline-indigo active:bg-indigo-500 transition ease-in-out duration-150",
-                    { "type": 'button', onclick: showExample },
-                    'Insert Example')),
-                h2.class("mb-1 text-xl text-indigo-900 font-medium", 'Type or paste HTML'),
-                div.class("flex-1")),
-              editorCode =
-              div.class("h-full rounded-md shadow-inner text-left")),
-            div.class("flex flex-col",
-              h2.class("mb-1 text-xl text-indigo-900 font-medium", 'Copy Enhanced DOM Functions (EDF)'),
-              displayCode =
-              div.class("h-full rounded-md shadow-inner text-left")),
-*/
-
 
 const app =
   div("flex flex-col h-screen",
