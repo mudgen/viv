@@ -136,10 +136,6 @@
 .cm-s-default .cm-property,
 .cm-s-default .cm-operator {}
 */
-.cm-variable {
-  /* rgb(0,0,204) */
-  color: rgb(0,0,194);
-}
 
 
 .cm-s-default .cm-variable-2 {color: #05a;}
@@ -156,23 +152,23 @@
 .cm-s-default .cm-attribute {color: #00c;}
 .cm-s-default .cm-hr {color: #999;}
 .cm-s-default .cm-link {color: #00c;}
+.cm-s-default .cm-string {color: rgb(170,64,64)/*rgb(54, 67, 120)*/ /*black*/;/*#a11*/}
 
-.cm-s-default .cm-string {color: rgb(54, 67, 120)/*black*/;/*#a11*/}
 
-/* rgb(170,34,34) */
+/*
+.cm-variable {  color: #170;}
+.cm-s-default .cm-m-javascript.cm-string {color: black;}
+.cm-s-default .cm-string-2 + .cm-string {color: rgb(20, 30, 80);}
+.cm-s-default .cm-property + .cm-string-2 {color: rgb(75, 85, 170);}
+.cm-s-default .cm-property { color: rgb(0,0,194);}
+*/
 
-.cm-s-default .cm-attribute + .cm-string {color: rgb(170,74,74);}
 
-/* rgb(102, 115, 241) */
-
-.cm-s-default .cm-property + .cm-string {color: rgb(80, 90, 200) /*#a22*/;}
-
-/* rgb(80, 90, 220) */
-.cm-s-default .cm-property + .cm-string-2 + .cm-string {color: rgb(75, 85, 170);}
-
-.cm-s-default .cm-property {
-  color: #170/*rgba(120, 55, 20, 1)*/;
-}
+.cm-variable {color: rgb(0,0,194); }
+.cm-s-default .cm-m-javascript.cm-string {color: rgb(20, 30, 80);}
+.cm-s-default .cm-string-2 + .cm-string {color: rgb(20, 30, 80);}
+.cm-s-default .cm-property + .cm-string-2 {color: rgb(75, 85, 170);}
+.cm-s-default .cm-property { color: #170;}
 
 
 /*

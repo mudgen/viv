@@ -115,15 +115,20 @@ function addChild(element, child) {
     assignProperties(element, child)
   }
   else if (typeof child == "function") {
-    const update = addUpdateFunction(element, child)
-    update();
-    if (child.name) {
-      element.viv.childFunctions[child.name] = update
+    if (child.isProxy) {
+      addChild(element, child());
     }
     else {
-      const length = Object.keys(element.viv.childFunctions)
-        .filter((value) => typeof value === "number").length;
-      element.viv.childFunctions[length] = update
+      const update = addUpdateFunction(element, child)
+      update();
+      if (child.name) {
+        element.viv.childFunctions[child.name] = update
+      }
+      else {
+        const length = Object.keys(element.viv.childFunctions)
+          .filter((value) => typeof value === "number").length;
+        element.viv.childFunctions[length] = update
+      }
     }
   }
   else if (typeof child == "string") {
@@ -207,53 +212,58 @@ img.src`interestinglinkurl`.alt`how do you know?`("my text");
    li(a`grey-text text-lighten-3`.href`#!`("Link 4"))))))
   */
 
+// img`something`.src('interestinglinkurl').alt`how do you know?`("my text");
+
+//img.src`interestinglinkurl`.alt`myimage`;
+
+function joinStringsAndArgs(args) {
+  const [strings, ...templateArgs] = args;
+  const result = [];
+  for (const [index, s] of strings.entries()) {
+    result.push(s);
+    result.push(templateArgs[index])
+  }
+  return result.join("");
+}
 
 /**
  * Creates specific vivElement constructors.
  * @param {string} tag
- * @param {string[]} propNames
+ * @param {string} prop
+ * @param {{ [x: string]: any; }} props
  */
-function elementConstructor(tag, propNames) {
-  let classes = "";
-  let construct = new Proxy(constructElement, {
+function elementConstructor(tag, prop, props) {
+  const proxy = new Proxy(constructElement, {
     apply(target, thisArg, args) {
-      if (args.length > 0 && Array.isArray(args[0])) {
-        classes = args[0][0];
-        return construct;
+      if (args.length > 0 && Array.isArray(args[0])
+        && Object.isFrozen(args[0])) {
+        let propsCopy = Object.assign({}, props);
+        propsCopy[prop || "class"] = joinStringsAndArgs(args);
+        prop = "";
+        return elementConstructor(tag, "", propsCopy);
       }
-      const props = Object.create(null);
-      if (classes.length > 0) {
-        props["class"] = classes;
-        classes = "";
+      else if (prop) {
+        let propsCopy = Object.assign({}, props);
+        propsCopy[prop || "class"] = args;
+        prop = "";
+        return elementConstructor(tag, "", propsCopy);
       }
-      if (propNames.length > 0) {
-        for (const [index, arg] of args.slice().entries()) {
-          if (index === propNames.length) {
-            break;
-          }
-          if (typeof arg !== "string") {
-            break;
-          }
-          props[propNames[index]] = arg;
-          args.shift();
-        }
+      else {
+        return target.apply(null, [tag, props, ...args]);
       }
-      return target.apply(null, [tag, props, ...args]);
     },
     get(target, property) {
       if (exists(target, property)) {
         return target[property];
       }
-      else if (typeof property != "string") {
-        throw Error("Property must be a string.");
+      else if (typeof property === "string") {
+        let propsCopy = Object.assign({}, props);
+        return elementConstructor(tag, property, propsCopy);
       }
-      let propNamesCopy = propNames.slice();
-      propNamesCopy.push(property);
-      target[property] = elementConstructor(tag, propNamesCopy);
-      return target[property];
     }
   })
-  return construct;
+  proxy.isProxy = true;
+  return proxy;
 }
 
 
@@ -265,7 +275,7 @@ export const elementConstructors = new Proxy(Object.create(null), {
     if (typeof prop !== "string") {
       throw Error("Must be strings.")
     }
-    target[prop] = elementConstructor(prop, ["class"]);
+    target[prop] = elementConstructor(prop, "", {});
     return target[prop];
   }
 });

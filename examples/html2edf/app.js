@@ -20,7 +20,12 @@ let editorCode;
 let displayCode;
 
 let exampleIndex = 0;
+let target;
 function showExample(e) {
+  console.log(`clicked!!`);
+  console.log(e);
+  console.log(e.target == target);
+  target = e.target;
   codeMirror.setValue(examples[exampleIndex]);
   exampleIndex++;
   if (exampleIndex == examples.length) {
@@ -29,31 +34,29 @@ function showExample(e) {
 }
 
 const app =
-  div("flex flex-col h-screen",
-    h1("#header p-5 text-2xl text-indigo-900 font-medium", 'Convert HTML to Enhanced DOM Functions (EDF)'),
-    div("flex-1 bg-indigo-200 text-center px-2 pb-2 m-2 grid gap-2 grid-cols-2 text-white rounded-md",
-      div("flex flex-col",
-        div("flex items-center",
-          div("flex flex-1 justify-start",
-            button("px-1 border border-transparent text-sm font-medium rounded text-gray-50 bg-indigo-400 hover:bg-indigo-300 focus:outline-none focus:border-indigo-400 focus:shadow-outline-indigo active:bg-indigo-500 transition ease-in-out duration-150",
+  div`flex flex-col h-screen`(
+    h1`#header p-5 text-2xl text-indigo-900 font-medium`("Convert HTML to Lscript"),
+    div`flex-1 bg-indigo-200 text-center px-2 pb-2 m-2 grid gap-2 grid-cols-2 text-white rounded-md`(
+      div`flex flex-col`(
+        div`flex items-center`(
+          div`flex flex-1 justify-start`(
+            button`px-1 border border-transparent text-sm font-medium rounded text-gray-50 bg-indigo-400 hover:bg-indigo-300 focus:outline-none focus:border-indigo-400 focus:shadow-outline-indigo active:bg-indigo-500`(
               { "type": 'button', onclick: showExample },
               'Insert Example')),
-          h2("mb-1 text-xl text-indigo-900 font-medium", 'Type or paste HTML'),
-          div("flex-1")),
-        editorCode =
-        div("h-full rounded-md shadow-inner text-left")),
-      div("flex flex-col",
-        h2("mb-1 text-xl text-indigo-900 font-medium", 'Copy Enhanced DOM Functions (EDF)'),
-        displayCode =
-        div("h-full rounded-md shadow-inner text-left")),
+          h2`mb-1 text-xl text-indigo-900 font-medium`("Type or paste HTML"),
+          div`flex-1`),
+        div.id`htmlEditor`.class`h-full rounded-md shadow-inner text-left`()),
+      div`flex flex-col`(
+        h2`mb-1 text-xl text-indigo-900 font-medium`("Copy Lscript"),
+        div.id`jsEditor`.class`h-full rounded-md shadow-inner text-left`()),
 
     ))
 
 
 document.getElementById("root").replaceWith(app);
 
-const codeMirror = CodeMirror(editorCode, { autofocus: true, mode: "xml", htmlMode: true });
-const displayCodeMirror = CodeMirror(displayCode, { autofocus: true, mode: "javascript" });
+const codeMirror = CodeMirror(document.getElementById("htmlEditor"), { autofocus: true, mode: "xml", htmlMode: true });
+const displayCodeMirror = CodeMirror(document.getElementById("jsEditor"), { autofocus: true, mode: "javascript", addModeClass: true });
 
 const MAX_SIZE = 125;
 let output = []
@@ -63,60 +66,21 @@ function out(o, indent) {
   let lineSize = indent;
   let nextOutput;
   let needsComma = false;
-  if (o.classes.length > 0) {
-    if (o.leadProp.length > 0) {
-      nextOutput = `${o.tagName}.${o.leadProp[0]}\`${o.classes}\`(`;
-      output.push(nextOutput);
-      lineSize += nextOutput.length;
-      if (lineSize + o.leadProp[1].length + 4 > MAX_SIZE) {
-        output.push(`\n${" ".repeat(indent)}`);
-        lineSize = indent;
-      }
-      nextOutput = `"${o.leadProp[1]}"`;
-      output.push(nextOutput);
-      lineSize += nextOutput.length;
-      needsComma = true;
-    }
-    else {
-      nextOutput = `${o.tagName}\`${o.classes}\`(`;
-      output.push(nextOutput);
-      lineSize += nextOutput.length;
-    }
-  }
-  else {
-    if (o.leadProp.length > 0) {
-      nextOutput = `${o.tagName}.${o.leadProp[0]}("${o.leadProp[1]}"`;
-      output.push(nextOutput);
-      lineSize += nextOutput.length;
-      needsComma = true;
-    }
-    else {
-      nextOutput = `${o.tagName}(`;
-      output.push(nextOutput);
-      lineSize += nextOutput.length;
-      needsComma = false;
-    }
-  }
 
-  if (o.attrs.length > 0) {
-    if (!needsComma) {
-      output.push(o.attrs);
-      lineSize += o.attrs.length;
-      needsComma = true;
+  output.push(o.tagName);
+  lineSize += o.tagName.length;
+
+  for (const [index, attr] of o.attrs.entries()) {
+    if (index > 0 && lineSize + attr.length > MAX_SIZE) {
+      output.push(`\n${" ".repeat(indent)}`);
+      lineSize = indent;
     }
-    else {
-      if (lineSize + o.attrs.length + 1 > MAX_SIZE) {
-        output.push(`,\n${" ".repeat(indent)}`);
-        lineSize = indent;
-      }
-      else {
-        output.push(", ")
-        lineSize += 2;
-      }
-      output.push(o.attrs);
-      lineSize += o.attrs.length;
-      needsComma = true;
-    }
+    output.push(attr);
+    lineSize += attr.length
+  }
+  if (o.children.length > 0) {
+    output.push("(");
+    lineSize += 1;
   }
 
   if (o.hasMultipleChildren) {
@@ -144,17 +108,8 @@ function out(o, indent) {
   else if (o.children.length === 1) {
     let child = o.children[0];
     if (typeof child === "string") {
-      let besidesString = o.classes.length > 0 || o.attrs.length > 0 || o.leadProp.length > 0;
-      if (besidesString && lineSize + child.length + 4 > MAX_SIZE) {
-        if (needsComma) {
-          output.push(",");
-          needsComma = false;
-        }
+      if (o.attrs.length > 0 && lineSize + child.length + 4 > MAX_SIZE) {
         output.push(`\n${" ".repeat(indent)}`);
-      }
-      if (needsComma) {
-        output.push(", ");
-        needsComma = false;
       }
       output.push(`"${child}"`);
     }
@@ -166,70 +121,58 @@ function out(o, indent) {
     }
     else {
       if (lineSize + child.size + 2 > MAX_SIZE) {
-        if (needsComma) {
-          output.push(",");
-          needsComma = false;
-        }
         output.push(`\n${" ".repeat(indent)}`);
         out(child, indent)
       }
       else {
-        if (needsComma) {
-          output.push(", ");
-          needsComma = false;
-        }
         out(child, indent)
       }
     }
   }
-  output.push(")");
+  if (o.children.length > 0) {
+    output.push(")");
+  }
 }
+
+function camelCase(hyphenText) {
+  return hyphenText.split("-")
+    .map((text, index) => {
+      if (index == 0) {
+        return text;
+      }
+      else {
+        text.charAt(0).toUpperCase() + text.slice(1)
+      }
+    })
+    .join("")
+}
+
 
 function traverse(element) {
   const o = Object.create(null);
   const tagName = (element.tagName || "div").toLowerCase();
   o.tagName = tagName;
-  const classes = [];
-  let leadProp = [];
-  let attrs = [];
+  let classes = "";
+  o.attrs = [];
   for (const a of element.attributes) {
     if (a.name === "id") {
-      classes.unshift("#" + a.value);
+      classes = `#${a.value} ${classes}`;
     }
     else if (a.name === "class") {
-      classes.push(a.value);
+      classes += a.value;
     }
     else {
-      if (a.name.toLowerCase() === "href"
-        && tagName === "a") {
-        leadProp = ["href", a.value];
+      let name = a.name;
+      if (name.indexOf('-') > -1) {
+        name = camelCase(name);
       }
-      else if (a.name.toLowerCase() === "src"
-        && ["script", "img"].includes(tagName)) {
-        leadProp = ["src", a.value]
-      }
-      else if (a.name.toLowerCase() === "for"
-        && tagName === "label") {
-        leadProp = ["for", a.value]
-      }
-      else if (a.name.indexOf('-') > -1) {
-        attrs.push(`"${a.name}":'${a.value}'`);
-      }
-      else {
-        attrs.push(`${a.name}:'${a.value}'`);
-      }
+      o.attrs.push(`.${name}\`${a.value}\``);
     }
   }
-  o.attrs = "";
-  if (attrs.length > 0) {
-    o.attrs = `{${attrs.join(", ")}}`;
-  }
-  o.classes = "";
   if (classes.length > 0) {
-    o.classes = classes.join(" ");
+    o.attrs.unshift(`\`${classes.replace(/\s+/g, ' ')}\``)
   }
 
-  o.leadProp = leadProp;
   o.children = [];
   o.numRealChildren = 0;
   for (const childNode of element.childNodes) {
@@ -250,46 +193,11 @@ function traverse(element) {
     }
   }
   o.hasMultipleChildren = false;
-  let leadPropLength = leadProp.join("").length;
-  if (leadPropLength > 0) {
-    // quots for value and the . for the property
-    leadPropLength += 3;
-  }
-  o.size = o.classes.length + o.attrs.length + leadPropLength + tagName.length;
-  // () around the tag name:
-  o.size += 2
-  if (o.classes.length === 0
-    && (o.attrs.length > 0 || o.numRealChildren > 0 || leadPropLength > 0)) {
-    // The v added to the tag
-    o.size++;
-  }
-  else {
-    // quotes for classes
-    o.size += 2;
-  }
 
-  let itemCount = 0;
-  if (o.attrs.length) {
-    itemCount++;
-  }
+  o.size = o.attrs.join("").length + tagName.length;
   if (o.numRealChildren > 0) {
-    itemCount++;
-  }
-  if (leadPropLength > 0) {
-    itemCount++;
-  }
-  if (o.classes.length > 0) {
-    itemCount++;
-  }
-  // calculate commas and space:
-  if (itemCount === 2) {
-    o.size += 2;
-  }
-  else if (itemCount === 3) {
-    o.size += 4;
-  }
-  else if (itemCount === 4) {
-    o.size += 6;
+    // () around the tag name:
+    o.size += 2
   }
 
   if (o.children.length > 1) {
@@ -341,8 +249,7 @@ codeMirror.on("changes", function (codeMirror, changes) {
     }
     else if (child.nodeType == Node.ELEMENT_NODE) {
       //parse(child, null, 0);
-      //output.push("\n")
-      console.log(traverse(child))
+      //output.push("\n")      
       out(traverse(child), 0);
       needsNewLine = true;
     }
