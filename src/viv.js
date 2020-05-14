@@ -91,6 +91,10 @@ function assignProperties(element, props) {
         }
       }
       else {
+        console.log(element);
+        console.log(key)
+        console.log(value)
+        console.log("--")
         element.setAttribute(key, value)
       }
     }
@@ -149,7 +153,11 @@ function addChild(element, child) {
  * @param {any[]} args
  */
 function constructElement(tagName, ...args) {
-  const element = document.createElement(tagName.toLowerCase());
+
+  tagName = tagName.toLowerCase();
+  const element = ["svg", "path", "title"].includes(tagName) ?
+    document.createElementNS("http://www.w3.org/2000/svg", tagName) :
+    document.createElement(tagName.toLowerCase());
   const vivObject = Object.create(null);
   element.viv = vivObject;
   vivObject.childFunctions = {};
@@ -244,7 +252,7 @@ function elementConstructor(tag, prop, props) {
       }
       else if (prop) {
         let propsCopy = Object.assign({}, props);
-        propsCopy[prop || "class"] = args;
+        propsCopy[prop || "class"] = args[0];
         prop = "";
         return elementConstructor(tag, "", propsCopy);
       }
