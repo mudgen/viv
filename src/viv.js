@@ -4,6 +4,9 @@ function isObject(arg) {
   return Object.prototype.toString.call(arg) == "[object Object]";
 }
 
+// @ts-ignore
+// @ts-ignore
+// eslint-disable-next-line no-unused-vars
 function exists(o, prop) {
   return prop in o || typeof o[prop] != "undefined";
 }
@@ -22,11 +25,14 @@ function addUpdateFunction(element, func) {
       const root = document.createDocumentFragment();
       for (const [index, child] of result.entries()) {
         let childCache = null;
+        // @ts-ignore
         if (child instanceof Element && child.viv.key) {
+          // @ts-ignore
           newChildrenCache.set(child.viv.key, {
             tagName: child.tagName,
             position: index
           });
+          // @ts-ignore
           childCache = childrenCache.get(child.viv.key);
         }
         if (childCache && childCache.tagName === child.tagName) {
@@ -68,7 +74,7 @@ function addUpdateFunction(element, func) {
 
 
 /**
- * @param {Element} element
+ * @param {Element & {viv?: any}} element
  * @param {{ [x: string]: any; }} props
  */
 function assignProperties(element, props) {
@@ -78,7 +84,7 @@ function assignProperties(element, props) {
       element.viv.key = value;
     }
     else if (typeof value === "string") {
-      if (key === "class") {
+      if (key === "class" || key==="className") {
         value = value.trim().split(/[\s.]+/);
         if (value.length == 0) {
           continue;
@@ -91,10 +97,10 @@ function assignProperties(element, props) {
         }
       }
       else {
-        console.log(element);
-        console.log(key)
-        console.log(value)
-        console.log("--")
+        //console.log(element);
+        //console.log(key)
+        //console.log(value)
+        //console.log("--")
         element.setAttribute(key, value)
       }
     }
@@ -152,13 +158,18 @@ function addChild(element, child) {
  * @param {string} tagName
  * @param {any[]} args
  */
-function constructElement(tagName, ...args) {
+export function constructElement(tagName, ...args) {
 
   tagName = tagName.toLowerCase();
+  /**
+   * @type {Element & {viv?: any}}
+   */
   const element = ["svg", "path", "title"].includes(tagName) ?
     document.createElementNS("http://www.w3.org/2000/svg", tagName) :
     document.createElement(tagName.toLowerCase());
+
   const vivObject = Object.create(null);
+
   element.viv = vivObject;
   vivObject.childFunctions = {};
   for (const arg of args) {
@@ -196,12 +207,12 @@ img.src`interestinglinkurl`.alt`how do you know?`("my text");
   li(a`grey-text text-lighten-3`.href`#!`("Link 2")),
   li(a`grey-text text-lighten-3`.href`#!`("Link 3")),
   li(a`grey-text text-lighten-3`.href`#!`("Link 4"))))))
-   
+
   li(a`grey-text text-lighten-3`({href:"#1"}, "Link 1")),
   li(a`grey-text text-lighten-3`({href:"#1"}, "Link 2")),
   li(a`grey-text text-lighten-3`({href:"#1"}, "Link 3")),
   li(a`grey-text text-lighten-3`({href:"#1"}, "Link 4"))))))
-     
+
   <li><a class="grey-text text-lighten-3" href="#!">Link 1</a></li>
   <li><a class="grey-text text-lighten-3" href="#!">Link 2</a></li>
   <li><a class="grey-text text-lighten-3" href="#!">Link 3</a></li>
@@ -221,72 +232,3 @@ img.src`interestinglinkurl`.alt`how do you know?`("my text");
   */
 
 // img`something`.src('interestinglinkurl').alt`how do you know?`("my text");
-
-//img.src`interestinglinkurl`.alt`myimage`;
-
-function joinStringsAndArgs(args) {
-  const [strings, ...templateArgs] = args;
-  const result = [];
-  for (const [index, s] of strings.entries()) {
-    result.push(s);
-    result.push(templateArgs[index])
-  }
-  return result.join("");
-}
-
-/**
- * Creates specific vivElement constructors.
- * @param {string} tag
- * @param {string} prop
- * @param {{ [x: string]: any; }} props
- */
-function elementConstructor(tag, prop, props) {
-  const proxy = new Proxy(constructElement, {
-    apply(target, thisArg, args) {
-      if (args.length > 0 && Array.isArray(args[0])
-        && Object.isFrozen(args[0])) {
-        let propsCopy = Object.assign({}, props);
-        propsCopy[prop || "class"] = joinStringsAndArgs(args);
-        prop = "";
-        return elementConstructor(tag, "", propsCopy);
-      }
-      else if (prop) {
-        let propsCopy = Object.assign({}, props);
-        propsCopy[prop || "class"] = args[0];
-        prop = "";
-        return elementConstructor(tag, "", propsCopy);
-      }
-      else {
-        return target.apply(null, [tag, props, ...args]);
-      }
-    },
-    get(target, property) {
-      if (exists(target, property)) {
-        return target[property];
-      }
-      else if (typeof property === "string") {
-        let propsCopy = Object.assign({}, props);
-        return elementConstructor(tag, property, propsCopy);
-      }
-    }
-  })
-  proxy.isProxy = true;
-  return proxy;
-}
-
-
-export const elementConstructors = new Proxy(Object.create(null), {
-  get: function (target, prop) {
-    if (exists(target, prop)) {
-      return target[prop];
-    }
-    if (typeof prop !== "string") {
-      throw Error("Must be strings.")
-    }
-    target[prop] = elementConstructor(prop, "", {});
-    return target[prop];
-  }
-});
-
-
-
