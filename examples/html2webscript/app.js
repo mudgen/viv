@@ -3,26 +3,77 @@
 
 import { constructElement } from '../../src/viv.js';
 import { elementBuilders } from '../../src/webscript.js'
-import { examples } from "./examples.js";
-//const { h1: { text: h1t }, div, h1, h2, span, button, textarea, pre, code } = elementConstructors;
+import { examples } from './examples.js';
+//import minify = require('html-minifier-terser');
 
-const { svg, path, title, body, div, p, label, h1, h2, h3, span, button, input } = elementBuilders(constructElement, [], { executeFunctions: false });
+//const { h1: { text: h1t }, div, h1, h2, span, button, textarea, pre, code } = elementConstructors;
+//console.log(require());
+// @ts-ignore
+// eslint-disable-next-line no-undef
+const htmlMinify = window.require('html-minifier').minify;
+// @ts-ignore
+const Terser = window.Terser;
+
+// eslint-disable-next-line no-unused-vars
+const { svg, path, title, body, div, p, label, h1, h2, h3, span, button, input } = elementBuilders(constructElement);
+
+
 
 // @ts-ignore
 const CodeMirror = window.CodeMirror;
 let maxLineLength = 125;
 let classAndId = false;
 let endParensNewline = false;
+let minifyCode = false;
+let htmlChars = 0;
+let javascriptChars = 0;
 
-let exampleIndex = 0;
+let exampleProperties = Object.keys(examples);
+function getExampleHash() {
+  return exampleProperties[Math.floor(exampleProperties.length * Math.random())]
+}
 // eslint-disable-next-line no-unused-vars
 function showExample(e) {
-  codeMirror.setValue(examples[exampleIndex]);
-  exampleIndex++;
-  if (exampleIndex == examples.length) {
-    exampleIndex = 0;
+  let oldHash = window.location.hash;
+  let newHash = getExampleHash();
+  if (oldHash !== "#" + newHash) {
+    window.location.hash = newHash;
   }
+  else {
+    showExample();
+  }
+  //codeMirror.setValue(getExampleHash());
+
 }
+window.addEventListener("hashchange", () => {
+  let hash = window.location.hash;
+  let example;
+  if (hash) {
+    example = examples[hash.slice(1)];
+  }
+  if (example) {
+    codeMirror.setValue(example);
+  }
+  else {
+    codeMirror.setValue("")
+  }
+})
+
+// eslint-disable-next-line no-unused-vars
+window.addEventListener("DOMContentLoaded", function (ev) {
+  let hash = window.location.hash;
+  let example;
+  if (hash) {
+    example = examples[hash.slice(1)];
+  }
+  if (example) {
+    codeMirror.setValue(example);
+  }
+  else {
+    codeMirror.setValue("")
+  }
+});
+
 
 function copyScript(e) {
   const text = displayCodeMirror.getValue();
@@ -31,7 +82,7 @@ function copyScript(e) {
 }
 
 function clearText() {
-  codeMirror.setValue("");
+  window.location.hash = "";
   return false;
 }
 
@@ -78,7 +129,16 @@ function saveSettings() {
   // @ts-ignore
   maxLineLength = maxLineLengthInput.value;
   hideSettings();
-  updateCodeMirror();
+  // @ts-ignore
+  let minify = document.getElementById("minify").checked;
+  if (minify === false && minifyCode == true) {
+    minifyCode = false;
+    codeMirror.setValue(oldHtml)
+  }
+  else {
+    minifyCode = minify;
+    updateCodeMirror();
+  }
 
 }
 
@@ -123,6 +183,10 @@ const settings =
           div`grid grid-cols-2 items-center pt-3`(
             label`block`("End Parens on Newline:"),
             input`#end-parens form-checkbox h-5 w-5 text-indigo-600`.type`checkbox`.checked(endParensNewline)
+          ),
+          div`grid grid-cols-2 items-center pt-3`(
+            label`block`("Minify:"),
+            input`#minify form-checkbox h-5 w-5 text-indigo-600`.type`checkbox`.checked(minifyCode)
           )
 
         ),
@@ -130,7 +194,6 @@ const settings =
           span`flex w-full rounded-md shadow-sm`(
             button`inline-flex justify-center w-full rounded-md border border-transparent px-4 py-2 bg-indigo-600 leading-6 font-medium text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:border-indigo-700 focus:shadow-outline-indigo sm:text-base sm:leading-5`
               .type`button`.onclick(saveSettings)("Save Settings")))));
-
 
 const app =
   body`bg-indigo-100`(
@@ -144,20 +207,27 @@ const app =
               button`px-1 border border-transparent text-sm font-medium rounded text-gray-200 bg-indigo-500 hover:bg-indigo-800 focus:outline-none focus:border-indigo-400 focus:shadow-outline-indigo active:bg-indigo-500`(
                 { "type": 'button', onclick: showExample },
                 'Insert Example')),
-            h2`mb-1 text-xl text-indigo-900 font-medium`("Type or paste HTML"),
+            div`flex items-center mb-1 text-indigo-900`(
+              h2`text-xl font-medium`("Type or paste HTML"),
+              span`#htmlChars block ml-2 font-medium`(function htmlCharsText() { return `(${htmlChars.toLocaleString()} chars)` })),
             div`flex-1`),
           div.id`htmlEditor`.class`h-full rounded-md shadow-inner text-left`()),
         div`flex flex-col`(
           div`flex`(
             div`flex-1`,
             div`flex`(
-              h2`mb-1 text-xl text-indigo-900 font-medium`("Copy Webscript"),
-              button`ml-2 text-indigo-500 hover:text-indigo-800`.onclick(copyScript)(
+              div`flex items-center mb-1 text-indigo-900`(
+                h2`text-xl font-medium`("Copy Webscript"),
+                span`#javascriptChars block ml-2 font-medium`(function javascriptCharsText() { return `(${javascriptChars.toLocaleString()} chars)` })),
+            ),
+            div`flex flex-1 justify-end items-center`(
+              button`flex mr-3 text-indigo-500 hover:text-indigo-800`.onclick(copyScript)(
+                span`font-medium mr-1`("Copy"),
                 svg`w-6 h-6 fill-current`.viewBox`0 0 20 20`(
                   title("Copy"),
-                  path.d`M6 6V2c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4v4a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V8c0-1.1.9-2 2-2h4zm2 0h4a2 2 0 0 1 2 2v4h4V2H8v4zM2 8v10h10V8H2z`))),
-            div`flex flex-1 justify-end`(
-              button`text-indigo-500 hover:text-indigo-800`.onclick(showSettings)(
+                  path.d`M6 6V2c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4v4a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V8c0-1.1.9-2 2-2h4zm2 0h4a2 2 0 0 1 2 2v4h4V2H8v4zM2 8v10h10V8H2z`)),
+              button`flex text-indigo-500 hover:text-indigo-800`.onclick(showSettings)(
+                span`font-medium mr-1`("Settings"),
                 svg`w-6 h-6 fill-current`.viewBox`0 0 20 20`(
                   path.d`M3.94 6.5L2.22 3.64l1.42-1.42L6.5 3.94c.52-.3 1.1-.54 1.7-.7L9 0h2l.8 3.24c.6.16 1.18.4 1.7.7l2.86-1.72 1.42 1.42-1.72 2.86c.3.52.54 1.1.7 1.7L20 9v2l-3.24.8c-.16.6-.4 1.18-.7 1.7l1.72 2.86-1.42 1.42-2.86-1.72c-.52.3-1.1.54-1.7.7L11 20H9l-.8-3.24c-.6-.16-1.18-.4-1.7-.7l-2.86 1.72-1.42-1.42 1.72-2.86c-.3-.52-.54-1.1-.7-1.7L0 11V9l3.24-.8c.16-.6.4-1.18.7-1.7zM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z`)
               ))),
@@ -217,7 +287,7 @@ function out(o, indent) {
         needsComma = true;
       }
     }
-    if(endParensNewline) {
+    if (endParensNewline) {
       output.push(`\n${" ".repeat(indent - 2)}`);
     }
     output.push(")");
@@ -241,7 +311,7 @@ function out(o, indent) {
       if (lineSize + child.size + 2 > maxLineLength) {
         output.push(`\n${" ".repeat(indent)}`);
         out(child, indent)
-        if(endParensNewline) {
+        if (endParensNewline) {
           output.push(`\n${" ".repeat(indent - 2)}`);
         }
         output.push(")");
@@ -251,7 +321,7 @@ function out(o, indent) {
         output.push(")");
       }
     }
-  }  
+  }
 }
 
 function camelCase(hyphenText) {
@@ -261,7 +331,7 @@ function camelCase(hyphenText) {
         return text;
       }
       else {
-        text.charAt(0).toUpperCase() + text.slice(1)
+        return text.charAt(0).toUpperCase() + text.slice(1)
       }
     })
     .join("")
@@ -340,10 +410,34 @@ function traverse(element) {
 
 let parser = new DOMParser();
 
+const htmlMinifyOptions = {
+  collapseWhitespace: true,
+  collapseBooleanAttributes: true,
+  continueOnParseError: true,
+  removeEmptyAttributes: true,
+  removeEmptyElements: true,
+}
+
+let oldHtml = "";
 const updateCodeMirror = function () {
   output = [];
   let needsNewLine = false;
-  let doc = parser.parseFromString(codeMirror.getValue(), "text/html");
+  let html = codeMirror.getValue();
+  if (minifyCode) {
+    let htmlMinified = htmlMinify(html, htmlMinifyOptions);
+    if (htmlMinified !== html) {
+      oldHtml = html;
+      codeMirror.setValue(htmlMinified);
+      return;
+    }
+    codeMirror.setOption("lineWrapping", true)
+  }
+  else {
+    codeMirror.setOption("lineWrapping", false)
+  }
+  htmlChars = html.length;
+  document.getElementById("htmlChars").viv.childFunctions.htmlCharsText()
+  let doc = parser.parseFromString(html, "text/html");
   for (const child of doc.childNodes) {
     if (needsNewLine) {
       output.push("\n");
@@ -375,10 +469,22 @@ const updateCodeMirror = function () {
     }
 
   }
-  const stringOutput = output.join("");
+  let stringOutput = output.join("");
+  if (minifyCode) {
+    displayCodeMirror.setOption("lineWrapping", true)
+    stringOutput = Terser.minify(stringOutput, {
+      output: {
+        comments: true
+      }
+    }).code;
+  }
+  else {
+    displayCodeMirror.setOption("lineWrapping", false)
+  }
+  javascriptChars = stringOutput.length;
   displayCodeMirror.setValue(stringOutput);
+  document.getElementById("javascriptChars").viv.childFunctions.javascriptCharsText();
 }
 
 codeMirror.on("changes", updateCodeMirror);
 
-//<div>test<div>I know</div></div>

@@ -10,8 +10,7 @@ function joinStringsAndArgs(args) {
   }
   return result.join("");
 }
-export function elementBuilders(elementConstructor, elements = [], options = {}) {
-  const executeFunctions = options.executeFunctions || true;
+export function elementBuilders(elementConstructor, elements = []) {
   function getPropertyValue(...args) {
     let [first] = args;
     if (typeof first === "undefined") {
@@ -40,12 +39,10 @@ export function elementBuilders(elementConstructor, elements = [], options = {})
           return createElementBuilder({ tagName, props, prop: null });
         }
         else {
-          if (executeFunctions) {
-            for (let i = 0; i < args.length; i++) {
-              let arg = args[i];
-              if (typeof arg === "function") {
-                args[i] = arg();
-              }
+          for (let i = 0; i < args.length; i++) {
+            let arg = args[i];
+            if (typeof arg === "function" && arg.__element_info__) {
+              args[i] = arg();
             }
           }
           let { tagName, props } = builder.__element_info__;

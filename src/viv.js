@@ -84,7 +84,7 @@ function assignProperties(element, props) {
       element.viv.key = value;
     }
     else if (typeof value === "string") {
-      if (key === "class" || key==="className") {
+      if (key === "class" || key === "className") {
         value = value.trim().split(/[\s.]+/);
         if (value.length == 0) {
           continue;
@@ -125,20 +125,15 @@ function addChild(element, child) {
     assignProperties(element, child)
   }
   else if (typeof child == "function") {
-    if (child.isProxy) {
-      addChild(element, child());
+    const update = addUpdateFunction(element, child)
+    update();
+    if (child.name) {
+      element.viv.childFunctions[child.name] = update
     }
     else {
-      const update = addUpdateFunction(element, child)
-      update();
-      if (child.name) {
-        element.viv.childFunctions[child.name] = update
-      }
-      else {
-        const length = Object.keys(element.viv.childFunctions)
-          .filter((value) => typeof value === "number").length;
-        element.viv.childFunctions[length] = update
-      }
+      const length = Object.keys(element.viv.childFunctions)
+        .filter((value) => typeof value === "number").length;
+      element.viv.childFunctions[length] = update
     }
   }
   else if (typeof child == "string") {
